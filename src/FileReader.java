@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  *
  * @author Mateusz
  */
-public class FileReader implements AbstractReaderInterface 
+public class FileReader 
 {
     
     private String path;
@@ -27,10 +27,6 @@ public class FileReader implements AbstractReaderInterface
         this.path = path;
     }
     
-    
-    
-    
-    @Override
     public String read() 
     {
         System.out.println("Funkcja read())");

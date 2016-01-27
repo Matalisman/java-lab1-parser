@@ -6,65 +6,82 @@
 
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by Mateusz
  */
-public class WebReader implements AbstractReaderInterface {
+public class WebReader implements  Runnable {
 
-    private String path;
+    private ObiektCrawlera obiekt;
+    private String slowoKluczowe;
+    private AtomicInteger atomicInteger;
 
-    WebReader(String path) {
-        System.out.println("Webreader");
-        this.path = path;
+    WebReader(ObiektCrawlera obiekt, String slowoKluczowe, AtomicInteger atomicInteger) {
+        this.obiekt = obiekt;
+        this.slowoKluczowe = slowoKluczowe;
+        this.atomicInteger = atomicInteger;
     }
+    
+    
 
     /**
      *
      * @return
      */
-    @Override
-    public String read() {
+    
+    public ArrayList<ObiektCrawlera> read() {
        String content = null;
            
         System.out.println("Funkcja read())");
-        String output ="";
-       
+        ArrayList<ObiektCrawlera> wynikLinkow = new ArrayList();
+        
             content = this.readSource();
        
         
-            String[] slowa = null;
+            String[] linki = null;
             String regex = "((https?|http?):((//)|(.))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)|((www.)+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
-        
+            String regexKeyWord = slowoKluczowe ;
         try {
             
-            slowa = content.split("=\"|\\s+|>|\"|'");
+            linki = content.split("=\"|\\s+|>|\"|'");
             
-            for (int i=1; i<slowa.length; i++){
-                System.out.println(slowa[i]);
-            }
+                       
+            for (int i=0; i<linki.length; i++) {
             
-            for (int i=0; i<slowa.length; i++) {
-            if (slowa[i].matches(regex)) { // matches uses regex
-               
-            System.out.println("Match " + slowa[i]);
-            output = output + slowa[i] + " ";
-        }
+                if (linki[i].matches(regex)) { // matches uses regex
+                //System.out.println("Match " + linki[i]);
+                wynikLinkow.add(new ObiektCrawlera(linki[i]));
+                }
+            
             }}  catch(NullPointerException e){}
         
-        return output;
+        SaveResults zapisz = new SaveResults();
+        try {
+            atomicInteger.addAndGet(wynikLinkow.size());
+        System.out.println("WebReader");
+        System.out.println(atomicInteger);
+            zapisz.saveToFile(wynikLinkow,atomicInteger );
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(WebReader.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return wynikLinkow;
         }
 
     String readSource() {
         String content = null;
         Scanner scanner = null;
         try {
-            URL url = new URL(path);
+            URL url = new URL(obiekt.getNazwa());
             scanner = new Scanner(url.openStream());
             }
         catch (Exception e) {
@@ -77,8 +94,12 @@ public class WebReader implements AbstractReaderInterface {
             {    
             content += scanner.nextLine();
             }
-            System.out.println(content);
         
         return content;    
+    }
+
+    @Override
+    public void run() {
+        this.read();
     }
 }

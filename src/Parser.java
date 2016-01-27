@@ -1,5 +1,11 @@
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -13,12 +19,10 @@ import java.util.ArrayList;
  */
 public class Parser extends javax.swing.JFrame {
     ArrayList<String[]> historia= new ArrayList();
-   
+    private AtomicInteger linkCounter = new AtomicInteger(0);
     String[] outputArray;
     int outputArrayCounter;
     String outPutText;
-    ReaderFactory factory;
-    SourceFactory sourceFactory;
     /**
      * Creates new form Parser
      */
@@ -37,42 +41,26 @@ public class Parser extends javax.swing.JFrame {
 
         tekst = new javax.swing.JTextField();
         accept = new javax.swing.JButton();
-        links = new javax.swing.JButton();
         jScrollPane3 = new javax.swing.JScrollPane();
         output = new javax.swing.JLabel();
-        source = new javax.swing.JToggleButton();
         history = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Parser");
         setBackground(new java.awt.Color(204, 0, 0));
 
-        tekst.setText("http://www.kot.pl");
+        tekst.setText("kot");
 
-        accept.setText("Wczytaj i policz linki");
+        accept.setText("Szukaj słowa kluczowego");
         accept.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 acceptActionPerformed(evt);
             }
         });
 
-        links.setText("Pokaż linki");
-        links.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                linksActionPerformed(evt);
-            }
-        });
-
         jScrollPane3.setViewportView(output);
 
-        source.setText("Pokaż źródło strony");
-        source.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                sourceActionPerformed(evt);
-            }
-        });
-
-        history.setText("Pokaż historię linków");
+        history.setText("Pokaż linki ze słowem kluczowym");
         history.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 historyActionPerformed(evt);
@@ -86,83 +74,61 @@ public class Parser extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addGap(62, 62, 62)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(accept)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 295, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(56, 56, 56)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(source, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(history, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addComponent(links)
-                    .addComponent(accept)
+                        .addComponent(history))
                     .addComponent(tekst, javax.swing.GroupLayout.PREFERRED_SIZE, 191, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(99, Short.MAX_VALUE))
+                .addContainerGap(43, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(57, 57, 57)
                 .addComponent(tekst, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(accept)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(accept)
                         .addGap(3, 3, 3)
                         .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 383, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(58, 58, 58)
-                        .addComponent(source)
-                        .addGap(18, 18, 18)
+                        .addGap(128, 128, 128)
                         .addComponent(history)))
-                .addGap(54, 54, 54)
-                .addComponent(links)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(88, Short.MAX_VALUE))
         );
-
-        links.getAccessibleContext().setAccessibleName("links");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void acceptActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_acceptActionPerformed
-        String acceptButton = tekst.getText();
+        try {
+            String slowoKluczowe = tekst.getText();
+            
+            Scanner fileReader = new Scanner(new File("file.txt"));
+            while(fileReader.hasNextLine()){
+            
+            Thread thread = new Thread(new WebReader(new ObiektCrawlera(fileReader.nextLine()),slowoKluczowe, linkCounter ));
+            Thread wczytaj = new Thread(new LinkManager(slowoKluczowe,linkCounter ));
+            wczytaj.run();
+            thread.run();
+            
+            
+            
+            }
+            
+            
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Parser.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
-        output.setText(acceptButton);
-        factory = new ReaderFactory(acceptButton);
-        outPutText = factory.getOutput();
-        System.out.println(outPutText);
         
-        outputArray = outPutText.split("\\s+");
-        outputArrayCounter = outputArray.length;
         
-        historia.add(outputArray);
-        output.setText(Integer.toString(outputArrayCounter));
+        
         
         
     }//GEN-LAST:event_acceptActionPerformed
-
-    private void linksActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linksActionPerformed
-        String links = "<html>";
-        for (int i=0; i<outputArray.length; i++)
-        {
-            links += "<br>" + outputArray[i];
-        }
-        links += "</html>";
-        output.setText(links);
-        
-    }//GEN-LAST:event_linksActionPerformed
-
-    private void sourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sourceActionPerformed
-        String acceptButton = tekst.getText();
-        sourceFactory = new SourceFactory(acceptButton);
-        outPutText = sourceFactory.getOutput();
-        System.out.println(outPutText);
-        
-        String source = "<html>";
-        outPutText = outPutText.replace(" ", "<br/>");
-        outPutText = outPutText.replace("/n", "<br/>");
-        source = source + outPutText + "</html>";
-        output.setText(source);
-    }//GEN-LAST:event_sourceActionPerformed
 
     private void historyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_historyActionPerformed
         String links = "<html>";
@@ -217,9 +183,7 @@ public class Parser extends javax.swing.JFrame {
     private javax.swing.JButton accept;
     private javax.swing.JButton history;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JButton links;
     private javax.swing.JLabel output;
-    private javax.swing.JToggleButton source;
     private javax.swing.JTextField tekst;
     // End of variables declaration//GEN-END:variables
 
